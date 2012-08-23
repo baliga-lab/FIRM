@@ -1,13 +1,14 @@
-Framework for Inference of Regulation by miRNAs (FIRM)
+FRAMEWORK FOR INFERENCE OF REGULATION BY MIRNAS (FIRM)
 By integrating the three best performing algorithms to infer miRNA mediate regulation from co-expression signatures we have constructed a generalizable Framework for Inference of Regulation by miRNAs (FIRM). FIRM is available as a Python script capable of identifying putative miRNA mediated regulation from transcriptome co-expression signatures.
 
-FIRM Dependencies
+FIRM DEPENDENCIES
 FIRM was developed in Linux, but by ensuring the following dependencies are met could be modified to work in Windows. In order to function properly this script requires:
 
 Python 2.6 or greater (but less than 3.X) - the lastest python can be downloaded here.
 R - the lastest R can be found here.
 Weeder - the lastest Weeder can be found here. The paths of this must be configured to identify the location of the frequency files packaged with FIRM. A successful installation of Weeder will allow a user to type 'weederlauncher' at the command line and will run the 'weederlauncher.out' program from Weeder 1.4.2.
 
+FIRM FILES
 Here is a brief description of the files and folders in the FIRM directory:
     prompt> ls FIRM
 
@@ -34,12 +35,12 @@ Here is a brief description of the files and folders in the FIRM directory:
     * pssm.py - python module to be a container for PSSM objects.
     * weeder_FreqFiles - the Weeder frequence files that should be placed in the appropriate FreqFile location as determined by the way Weeder was installed.
 
-Installing and Running FIRM
+INSTALLING AND RUNNING FIRM
 If the dependencies above are met then to run FIRM will simply require the user to create the appropriate co-expression signature files and place them in the 'exp' directory. Then the analysis can be started by typing:
 
     prompt> python FIRM.py
 
-Interpreting Results from FIRM
+INTERPRETING RESULTS FROM FIRM
 FIRM limits the Weeder-miRvestigator method to only those inferences of miRNA mediated regulation with a perfect 7- or 8-mer miRvestigator complementarity p-value (p-value = 6.1 x 10-5 or 1.5 x 10-5, respectively) to a miRNA seed in miRBase. Inferences of miRNA mediated regulation from the PITA and TargetScan enrichment of predicted miRNA target genes methods were filtered to include only those with Benjamini-Hochberg FDR = 0.001 and at least 10% of genes had a predicted miRNA binding site. After FIRM finished running it will produce a file 'combinedResults.csv' in the main FIRM directory. For the This file will contain a listing of all co-expression signatures that were predicted to be regualted by a miRNA. The column headings are:
 
      1. Dataset - the dataset where the co-expression signature was observed.
