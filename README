@@ -7,12 +7,7 @@ FIRM was developed in Linux, but by ensuring the following dependencies are met 
 Python 2.6 or greater (but less than 3.X) - the lastest python can be downloaded here.
 R - the lastest R can be found here.
 Weeder - the lastest Weeder can be found here. The paths of this must be configured to identify the location of the frequency files packaged with FIRM. A successful installation of Weeder will allow a user to type 'weederlauncher' at the command line and will run the 'weederlauncher.out' program from Weeder 1.4.2.
-Download FIRM
-We provide FIRM as a tarred and gzipped file:
 
-Download FIRM.tgz (16.5MB)
-Once downloaded navigate a Linux command prompt to the directory containing the file and run:
-    prompt> tar xvzf FIRM.tgz
 Here is a brief description of the files and folders in the FIRM directory:
     prompt> ls FIRM
 
