@@ -227,7 +227,7 @@ def benjaminiHochberg(dict1, tests = 2240, alpha=0.001):
 ############################
 
 # 0. Create a dictionary to convert the miRNAs to there respective ids
-inFile = open('hsa.mature.fa','r')
+inFile = open('common/hsa.mature.fa','r')
 miRNAIDs = {}
 miRNAIDs_rev = {}
 while 1:
@@ -294,7 +294,7 @@ fastaFiles = mgr.list()
 # NM_000014\t52\n
 # <RefSeq_ID>\t<signature_id>\n
 # ...
-files = os.listdir('exp')
+"""files = os.listdir('exp')
 for file in files:
     # 3. Read in cluster file and convert to entrez ids
     print '3'
@@ -472,7 +472,7 @@ for db in ['TargetScan','PITA']:
     for clust in range(len(filtered)):
         outFile.write('\n'+filtered[clust]['dataset']+','+filtered[clust]['cluster']+','+miRNA+','+str(float(enrichment[clust]['q'])/float(enrichment[clust]['k'])))
     outFile.close()
-
+"""
 #################################
 ### WRITE OUT COMBINED REPORT ###
 #################################
@@ -488,7 +488,7 @@ for line in lines:
             miRNA_mature_seq_ids += miRNAInDict(i.lower(),miRNAIDs)
         cluster_name = [i for i in line[0].split('_')]
         cluster_name = cluster_name[1]+'_'+cluster_name[2]+'_'+cluster_name[3]+'_'+cluster_name[0]
-        miRNA_matches[cluser_name] = {'miRNA':line[1],'model':line[2],'mature_seq_ids':miRNA_mature_seq_ids}
+        miRNA_matches[cluster_name] = {'miRNA':line[1],'model':line[2],'mature_seq_ids':miRNA_mature_seq_ids}
 
 print 'Loaded miRvestigator.'
 # Get PITA results
@@ -497,17 +497,18 @@ inFile.readline() # get rid of header
 lines = [i.strip().split(',') for i in inFile.readlines()]
 pita_miRNA_matches = {}
 for line in lines:
-    if not line[1]=='':
+    if not line[2]=='':
         miRNA_mature_seq_ids = []
-        for i in line[1].split(';'):
-            miRNA_mature_seq_ids += miRNAInDict(i.lower(),miRNAIDs)
-        if not line[0] in miRNA_matches:
-            miRNA_matches[line[0]] = {'pita_miRNA':line[1],'pita_perc_targets':line[2].split(';')[0],'pita_pValue':line[3],'pita_mature_seq_ids':miRNA_mature_seq_ids}
+        mirs = [i.lower().strip('pita_') for i in line[2].split(' ')]
+        for i in mirs:
+            miRNA_mature_seq_ids += miRNAInDict(i,miRNAIDs)
+        if not line[0]+'_'+line[1] in miRNA_matches:
+            miRNA_matches[line[0]+'_'+line[1]] = {'pita_miRNA':' '.join(mirs),'pita_perc_targets':str(float(line[3])/float(line[6])),'pita_pValue':line[7],'pita_mature_seq_ids':miRNA_mature_seq_ids}
         else:
-            miRNA_matches[line[0]]['pita_miRNA'] = line[1]
-            miRNA_matches[line[0]]['pita_perc_targets'] = line[2].split(';')[0]
-            miRNA_matches[line[0]]['pita_pValue'] = line[3]
-            miRNA_matches[line[0]]['pita_mature_seq_ids'] = miRNA_mature_seq_ids
+            miRNA_matches[line[0]+'_'+line[1]]['pita_miRNA'] = ' '.join(mirs)
+            miRNA_matches[line[0]+'_'+line[1]]['pita_perc_targets'] = str(float(line[3])/float(line[6]))
+            miRNA_matches[line[0]+'_'+line[1]]['pita_pValue'] = line[7]
+            miRNA_matches[line[0]+'_'+line[1]]['pita_mature_seq_ids'] = miRNA_mature_seq_ids
 print 'Loaded PITA.'
 # Get TargetScan results
 inFile = open('miRNA/mergedResults_TargetScan.csv','r')
@@ -515,17 +516,18 @@ inFile.readline() # get rid of header
 lines = [i.strip().split(',') for i in inFile.readlines()]
 targetScan_miRNA_matches = {}
 for line in lines:
-    if not line[1]=='':
+    if not line[2]=='':
         miRNA_mature_seq_ids = []
-        for i in line[1].split(';'):
-            miRNA_mature_seq_ids += miRNAInDict(i.lower(),miRNAIDs)
-        if not line[0] in miRNA_matches:
-            miRNA_matches[line[0]] = {'ts_miRNA':line[1],'ts_perc_targets':line[2].split(';')[0],'ts_pValue':line[3],'ts_mature_seq_ids':miRNA_mature_seq_ids}
+        mirs = [i.lower().strip('scan_') for i in line[2].split(' ')]
+        for i in line[2].split(';'):
+            miRNA_mature_seq_ids += miRNAInDict(i.lower().strip('targetscan_'),miRNAIDs)
+        if not line[0]+'_'+line[1] in miRNA_matches:
+            miRNA_matches[line[0]+'_'+line[1]] = {'ts_miRNA':' '.join(mirs),'ts_perc_targets':str(float(line[3])/float(line[6])),'ts_pValue':line[7],'ts_mature_seq_ids':miRNA_mature_seq_ids}
         else:
-            miRNA_matches[line[0]]['ts_miRNA'] = line[1]
-            miRNA_matches[line[0]]['ts_perc_targets'] = line[2].split(';')[0]
-            miRNA_matches[line[0]]['ts_pValue'] = line[3]
-            miRNA_matches[line[0]]['ts_mature_seq_ids'] = miRNA_mature_seq_ids
+            miRNA_matches[line[0]+'_'+line[1]]['ts_miRNA'] = ' '.join(mirs)
+            miRNA_matches[line[0]+'_'+line[1]]['ts_perc_targets'] = str(float(line[3])/float(line[6]))
+            miRNA_matches[line[0]+'_'+line[1]]['ts_pValue'] = line[7]
+            miRNA_matches[line[0]+'_'+line[1]]['ts_mature_seq_ids'] = miRNA_mature_seq_ids
 print 'Loaded TargetScan.'
 
 # Big list of all miRNAs for all clusters
@@ -535,17 +537,17 @@ for i in miRNA_matches:
     splitUp = i.split('_')
     writeMe = '\n'+splitUp[0]+'_'+splitUp[1]+'_'+splitUp[2]+','+splitUp[3]
     if 'miRNA' in miRNA_matches[i]:
-        writeMe += miRNA_matches['miRNA']+','+miRNA_matches['model']+','+miRNA_matches['mature_seq_ids']
+        writeMe += ','+miRNA_matches[i]['miRNA']+','+miRNA_matches[i]['model']+','+' '.join(miRNA_matches[i]['mature_seq_ids'])
     else:
-        writeMe += 'NA,NA,NA'
+        writeMe += ',NA,NA,NA'
     if 'pita_miRNA' in miRNA_matches[i]:
-        writeMe += miRNA_matches['pita_miRNA']+','+miRNA_matches['pita_perc_targets']+','+miRNA_matches['pita_pValue']+','+miRNA_matches['pita_mature_seq_ids']
+        writeMe += ','+miRNA_matches[i]['pita_miRNA']+','+miRNA_matches[i]['pita_perc_targets']+','+miRNA_matches[i]['pita_pValue']+','+' '.join(miRNA_matches[i]['pita_mature_seq_ids'])
     else:
-        writeMe += 'NA,NA,NA,NA'
+        writeMe += ',NA,NA,NA,NA'
     if 'ts_miRNA' in miRNA_matches[i]:
-        writeMe += miRNA_matches['ts_miRNA']+','+miRNA_matches['ts_perc_targets']+','+miRNA_matches['ts_pValue']+','+miRNA_matches['ts_mature_seq_ids']
+        writeMe += ','+miRNA_matches[i]['ts_miRNA']+','+miRNA_matches[i]['ts_perc_targets']+','+miRNA_matches[i]['ts_pValue']+','+' '.join(miRNA_matches[i]['ts_mature_seq_ids'])
     else:
-        writeMe += 'NA,NA,NA,NA'
+        writeMe += ',NA,NA,NA,NA'
     outFile.write(writeMe)
 outFile.close()
 
