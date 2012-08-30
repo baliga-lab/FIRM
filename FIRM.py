@@ -294,7 +294,7 @@ fastaFiles = mgr.list()
 # NM_000014\t52\n
 # <RefSeq_ID>\t<signature_id>\n
 # ...
-"""files = os.listdir('exp')
+files = os.listdir('exp')
 for file in files:
     # 3. Read in cluster file and convert to entrez ids
     print '3'
@@ -472,7 +472,7 @@ for db in ['TargetScan','PITA']:
     for clust in range(len(filtered)):
         outFile.write('\n'+filtered[clust]['dataset']+','+filtered[clust]['cluster']+','+miRNA+','+str(float(enrichment[clust]['q'])/float(enrichment[clust]['k'])))
     outFile.close()
-"""
+
 #################################
 ### WRITE OUT COMBINED REPORT ###
 #################################
@@ -519,7 +519,7 @@ for line in lines:
     if not line[2]=='':
         miRNA_mature_seq_ids = []
         mirs = [i.lower().strip('scan_') for i in line[2].split(' ')]
-        for i in line[2].split(';'):
+        for i in mirs:
             miRNA_mature_seq_ids += miRNAInDict(i.lower().strip('targetscan_'),miRNAIDs)
         if not line[0]+'_'+line[1] in miRNA_matches:
             miRNA_matches[line[0]+'_'+line[1]] = {'ts_miRNA':' '.join(mirs),'ts_perc_targets':str(float(line[3])/float(line[6])),'ts_pValue':line[7],'ts_mature_seq_ids':miRNA_mature_seq_ids}
