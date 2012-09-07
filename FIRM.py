@@ -208,7 +208,7 @@ def qsortBasedOn(sortMe, basedOn):
     return [lesserOut[0] + [pivotSM] + greaterOut[0], lesserOut[1] + [pivot] + greaterOut[1]]
 
 # Benjamini-Hochberg - takes a dictionary of { name: pValue, ... }
-def benjaminiHochberg(dict1, tests = 2240, alpha=0.001):
+def benjaminiHochberg(dict1, tests, alpha=0.001):
     # First sort the results
     sorted1 = qsortBasedOn(dict1.keys(), dict1.values())[0]
     # Then control based on FDR
@@ -294,6 +294,7 @@ fastaFiles = mgr.list()
 # NM_000014\t52\n
 # <RefSeq_ID>\t<signature_id>\n
 # ...
+clusterNum = 0
 files = os.listdir('exp')
 for file in files:
     # 3. Read in cluster file and convert to entrez ids
@@ -308,6 +309,7 @@ for file in files:
         if splitUp[0] in refSeq2entrez:
             if not int(splitUp[1]) in clusters:
                 clusters[int(splitUp[1])] = [refSeq2entrez[splitUp[0]]]
+                clusterNum += 1
             else:
                 clusters[int(splitUp[1])].append(refSeq2entrez[splitUp[0]])
     inFile.close()
@@ -457,7 +459,7 @@ for db in ['TargetScan','PITA']:
     bhDict = {}
     for clust in range(len(enrichment)):
         bhDict[enrichment[clust]['dataset']+'_'+enrichment[clust]['cluster']] = enrichment[clust]['pValue']
-    significant = benjaminiHochberg(bhDict, tests=2240, alpha=0.001)
+    significant = benjaminiHochberg(bhDict, tests=clusterNum, alpha=0.001)
     # Do filtering
     filtered = []
     for clust in range(len(enrichment)):
