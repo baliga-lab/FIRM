@@ -26,6 +26,7 @@ from copy import deepcopy
 from subprocess import *
 from random import sample
 from multiprocessing import Pool, cpu_count, Manager
+from collections import defaultdict
 
 #################
 ### FUNCTIONS ###
@@ -284,6 +285,8 @@ seqFile.close()
 ### Run miRvestigator on all sigantures ###
 ###########################################
 
+use_entrez = True
+
 # Setup for multiprocessing
 mgr = Manager()
 fastaFiles = mgr.list()
@@ -306,7 +309,13 @@ for file in files:
     clusters = {}
     for line in lines:
         splitUp = line.strip().split('\t')
-        if splitUp[0] in refSeq2entrez:
+        if use_entrez:
+            if not int(splitUp[1]) in clusters:
+                clusters[int(splitUp[1])] = [splitUp[0]]
+                clusterNum += 1
+            else:
+                clusters[int(splitUp[1])].append(splitUp[0])
+        elif splitUp[0] in refSeq2entrez:
             if not int(splitUp[1]) in clusters:
                 clusters[int(splitUp[1])] = [refSeq2entrez[splitUp[0]]]
                 clusterNum += 1
