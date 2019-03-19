@@ -167,5 +167,3 @@ class pssm:
             if not pMax>lim2:
                 conLet = 'N'
         return conLet
-
-    

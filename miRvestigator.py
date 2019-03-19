@@ -28,8 +28,8 @@ import os, cPickle
 # miRNAver - version of miRBase.org used.
 # miRNAs - list of miRNAs where each entry is unique, and names are appened for overlapping seeds.
 # permKMers - list of possible Kmers given the seed length.
-# 
-# 
+#
+#
 # Functions:
 # addSorted(curList,newItem) - adds an entry into miRNAScores[pssm] so that the list is sorted in the end. Ties are possible and not handled at this level.
 # allKmers(length) - creates a list of all possible Kmers given a specific length and alphabet.
@@ -93,7 +93,7 @@ class miRvestigator:
             print 'Screening out 8mers not present in 3\' UTRs...'
             if not os.path.exists(dirName+'/permKMers_8mers.pkl'):
                 permKMers_8mer = self.allKmers(8)
-            
+
                 tmpKMers = []
                 for i in permKMers_8mer:
                     if not p3utrSeqs.find(i)==-1:
@@ -195,7 +195,7 @@ class miRvestigator:
                     elif float(pssm.getMatrix()[i][2])>=float(wobbleCut):
                         ep['WOBBLE'+str(i)] = { 'A': 1, 'C': 0, 'G': 0, 'T': 0 }
                     # If motif has U greater than wobblecut or random (0.25)
-                    elif float(pssm.getMatrix()[i][3])>=float(wobbleCut):                
+                    elif float(pssm.getMatrix()[i][3])>=float(wobbleCut):
                         ep['WOBBLE'+str(i)] = { 'A': 0, 'C': 1, 'G': 0, 'T': 0 }
                     # Otherwise be random (0.25 x 4)
                     else:
@@ -311,7 +311,7 @@ class miRvestigator:
             if hits_8mer>1 and hits_7mer_m8>1 and hits_7mer_a1>1:
                 print 'No match!'
                 outMe.append(pssm.getName()+',NA,NA')
-        
+
         print 'miRvestigator analysis completed.\n'
         outFile = open(dirName+'/scores'+str(outName)+'.csv','w')
         outFile.write('pssm,miRNAs,match_type')
@@ -331,7 +331,7 @@ class miRvestigator:
             return(self.allKmers(depth,letters,newseqs,curdepth + 1))
         else:
             return(seqs)
-    
+
     # Get the miRNAs to compare against
     def setMiRNAs(self,seedStart,seedEnd, minor=True, p5=True, p3=True):
         if not os.path.exists('mature.fa.gz'):
@@ -369,7 +369,7 @@ class miRvestigator:
                     # Now grab out the 2-8bp and do reverse complement on it
                     miRNAs[curMiRNA] = self.reverseComplement((seqLine.strip())[seedStart:seedEnd])
         miRNAFile.close()
-        
+
         # How many distinct kMers in miRNAs
         miRNAuniq = {}
         for miRNA in miRNAs:
@@ -390,7 +390,7 @@ class miRvestigator:
             tmp[miRNA] = miRNAs[miRNA][start:stop]
             #print tmp[miRNA]
         return tmp
-        
+
     # Complement
     def complement(self,seq):
         complement = {'A':'T', 'T':'A', 'C':'G', 'G':'C', 'N':'N', 'U':'A'}
@@ -447,29 +447,29 @@ class miRvestigator:
     def viterbi(self, obs, states, start_p, trans_p, emit_p):
         V = [{}]
         path = {}
-     
+
         # Initialize base cases (t == 0)
         for y in states:
             V[0][y] = start_p[y] * emit_p[y][obs[0]]
             path[y] = [y]
-     
+
         # Run Viterbi for t > 0
         for t in range(1,len(obs)):
             V.append({})
             newpath = {}
-     
+
             for y in states:
                 (prob, state) = max([(V[t-1][y0] * trans_p[y0][y] * emit_p[y][obs[t]], y0) for y0 in states])
                 V[t][y] = prob
                 newpath[y] = path[state] + [y]
-     
+
             # Don't need to remember the old paths
             path = newpath
-     
+
         #print_dptable(V)
         (prob, state) = max([(V[len(obs) - 1][y], y) for y in states])
         return (prob, path[state])
-    
+
 
     # Decide whether to add and add at correct position
     # Strucuture of elements:
@@ -525,8 +525,8 @@ class miRvestigator:
                 scoreList[i]['rank'] = i
                 retMe.append(scoreList[i])
         return retMe
-    
-    # Strucuture of elements:
+
+    # Structure of elements:
     # [pssm, getConsensus(pssms[pssm]), miRNA, miRNAs[miRNA], forVit]
     # <tr><td>miRNA Name</td><td>Alignment Start<sup>*</sup></td><td>Alignment Stop<sup>*</sup></td><td>Alignment Length</td><td>Motif (Length)</td><td>Alignment Type</td><td>Alignment</td><td>P(Alignment)</td></tr>
     def outHtml(self, outMe):
@@ -588,9 +588,9 @@ class miRvestigator:
         writeMe += '<td>'+str(start)+'</td><td>'+str(start+lenMatch-1)+'</td><td>'+str(lenMatch)+'</td><td><font face="Courier New"><pre>Seed  '+str(seedAlign)+'\n      '+str(aligned)+'\nMotif '+str(motifAlign)+'</pre></font></td>'
         # P(Alignment)
         writeMe += '<td>'+str(outMe[4][0])+'</td><td>'+str(float(len([i for i in self.totPs if i>=outMe[4][0]]))/float(len(self.totPs)))+'</td><td>'+str(outMe[4][2])+'</td><td>'+str(float(len([i for i in self.vitPs if i>=outMe[4][2]]))/float(len(self.vitPs)))+'</td></tr>'
-        
+
         return writeMe
-    
+
     # Decide whether to add and add at correct position
     # Strucuture of elements:
     # input = [pssm, getConsensus(pssms[pssm]), miRNA, miRNAs[miRNA], forVit], totPs, vitPs (Ps are permuted probabilities)
@@ -660,5 +660,3 @@ class miRvestigator:
         # P(Alignment)
         output += [outMe[4][0],totP,outMe[4][2],vitP]
         return [str(i) for i in output]
-
-
