@@ -19,12 +19,13 @@
 
 import argparse
 from pssm import pssm
-import cPickle, gzip, os, sys, re, os, math, shutil
+import pickle, gzip, os, sys, re, os, math, shutil
 from copy import deepcopy
 from subprocess import *
 from random import sample
 from multiprocessing import Pool, cpu_count, Manager
 from collections import defaultdict
+from miRvestigator import miRvestigator
 
 
 def miRNAInDict(miRNA, dict1):
@@ -37,7 +38,7 @@ def miRNAInDict(miRNA, dict1):
 def compareMiRNANames(a, b):
     if a==b:
         return 1
-    if len(a)<len(b):
+    if len(a) < len(b):
         re1 = re.compile(a+'[a-z]$')
         if re1.match(b):
             return 1
@@ -57,7 +58,7 @@ def weeder(i=None, percTargets=50, revComp=False):
     global fastaFiles, weederPSSMs1
 
     seqFile = fastaFiles[i]
-    print seqFile
+    print(seqFile)
     if not os.path.exists('tmp/weeder'):
         os.makedirs('tmp/weeder')
 
@@ -127,7 +128,11 @@ def weeder(i=None, percTargets=50, revComp=False):
         instances = []
         while line.find('Frequency Matrix') == -1:
             splitUp = [i for i in line.strip().split(' ') if i]
-            instances.append({'gene':seqDict[splitUp[0]], 'strand':splitUp[1], 'site':splitUp[2], 'start':splitUp[3], 'match':splitUp[4].lstrip('(').rstrip(')') })
+            instances.append({'gene':seqDict[splitUp[0]],
+                              'strand':splitUp[1],
+                              'site':splitUp[2],
+                              'start':splitUp[3],
+                              'match':splitUp[4].lstrip('(').rstrip(')') })
             line = outLines.pop(0)
         # Read in Frequency Matrix
         outLines.pop(0)
@@ -139,9 +144,15 @@ def weeder(i=None, percTargets=50, revComp=False):
             colSum = 0
             for i in nums:
                 colSum += int(i.strip())
-            matrix += [[ float(nums[0])/float(colSum), float(nums[1])/float(colSum), float(nums[2])/float(colSum), float(nums[3])/float(colSum)]]
+            matrix += [[ float(nums[0])/float(colSum),
+                         float(nums[1])/float(colSum),
+                         float(nums[2])/float(colSum),
+                         float(nums[3])/float(colSum)]]
             col = outLines.pop(0)
-        weederPSSMs1.append(pssm(biclusterName=name,nsites=instances,eValue=hitBp[len(matrix)][1],pssm=matrix,genes=redMotifs))
+        weederPSSMs1.append(pssm(biclusterName=name,
+                                 nsites=instances,eValue=hitBp[len(matrix)][1],
+                                 pssm=matrix,
+                                 genes=redMotifs))
 
 def phyper(q, m, n, k):
     # Get an array of values to run
@@ -149,14 +160,15 @@ def phyper(q, m, n, k):
     runMe = []
     for i in range(len(q)):
         runMe.append('phyper('+str(q[i])+','+str(m[i])+','+str(n[i])+','+str(k[i])+',lower.tail=F)')
-    runMe = '\n'.join(runMe)+'\n'
+    runMe = ('\n'.join(runMe)+'\n').encode()
     out = rProc.communicate(runMe)
-    return [line.strip().split(' ')[1] for line in out[0].strip().split('\n') if line]
+    return [line.strip().split(' ')[1]
+            for line in out[0].decode("utf-8").strip().split('\n') if line]
 
 def clusterHypergeo(cluster):
     global db, dataset, datasetGenes, totalTargets, clusters, miRNATargetDict
 
-    print 'Cluster '+str(cluster)
+    print('Cluster %d' % cluster)
     outFile = open('miRNA_'+db+'/'+str(dataset[0])+'_'+str(cluster)+'.csv','w')
     outFile.write('miRNA,Cluster.Targets,miRNA.Targets,Cluster.Genes,Total,P.Value\n')
     # k = overlap, N = potential target genes, n = miRNA targets, m = cluster genes
@@ -210,7 +222,7 @@ def qsortBasedOn(sortMe, basedOn):
 # Benjamini-Hochberg - takes a dictionary of { name: pValue, ... }
 def benjaminiHochberg(dict1, tests, alpha=0.001):
     # First sort the results
-    sorted1 = qsortBasedOn(dict1.keys(), dict1.values())[0]
+    sorted1 = qsortBasedOn(list(dict1.keys()), list(dict1.values()))[0]
     # Then control based on FDR
     res1 = []
     alpha = float(alpha)
@@ -238,7 +250,7 @@ def make_mirna_dicts(mirna_path):
             if not splitUp[0].lower() in miRNAIDs:
                 miRNAIDs[splitUp[0].lower()] = splitUp[1]
             else:
-                print 'Uh oh!',splitUp
+                print('Uh oh! %s' % splitUp)
 
     return miRNAIDs, miRNAIDs_rev
 
@@ -253,6 +265,7 @@ def make_refseq2entrez(gene2refseq_path, gene2refseq_pkl_path):
                 line = inFile.readline()
                 if not line:
                     break
+                line = line.decode("utf-8")
 
                 # Only add those that have the correct NCBI organism ID
                 splitUp = line.strip().split('\t')
@@ -265,10 +278,10 @@ def make_refseq2entrez(gene2refseq_path, gene2refseq_pkl_path):
                             refSeq2entrez[deepcopy(tmp)] = int(splitUp[1])
 
         with open(gene2refseq_pkl_path, 'wb') as pklFile:
-            cPickle.dump(refSeq2entrez,pklFile)
+            pickle.dump(refSeq2entrez,pklFile)
     else:
         with open(gene2refseq_pkl_path, 'rb') as pklFile:
-            refSeq2entrez = cPickle.load(pklFile)
+            refSeq2entrez = pickle.load(pklFile)
 
     print('length refseq2entrez = %d' % len(refSeq2entrez))
     return refSeq2entrez
@@ -277,7 +290,7 @@ def make_refseq2entrez(gene2refseq_path, gene2refseq_pkl_path):
 def read_sequences(seq_path):
     # 2. Read in sequences
     with gzip.open(seq_path, 'r') as seqFile:
-        seqLines = seqFile.readlines()
+        seqLines = [line.decode("utf-8") for line in seqFile.readlines()]
         ids = [i.strip().split(',')[0].upper() for i in seqLines]
         sequences = [i.strip().split(',')[1] for i in seqLines]
         seqs = dict(zip(ids,sequences))
@@ -304,7 +317,6 @@ def run_mirvestigator(seqs, refSeq2entrez, use_entrez):
     # NM_000014\t52\n
     # <RefSeq_ID>\t<signature_id>\n
     # ...
-    clusterNum = 0
     files = os.listdir('exp')
     for file in files:
         # 3. Read in cluster file and convert to entrez ids
@@ -312,35 +324,30 @@ def run_mirvestigator(seqs, refSeq2entrez, use_entrez):
             dataset = file.strip().split('.')[0]
             inFile.readline()
             lines = inFile.readlines()
-            clusters = {}
+            clusters = defaultdict(list)
             for line in lines:
-                splitUp = line.strip().split('\t')
+                gene, group = line.strip().split('\t')
+                group = int(group)
                 if use_entrez:
-                    if not int(splitUp[1]) in clusters:
-                        clusters[int(splitUp[1])] = [splitUp[0]]
-                        clusterNum += 1
-                    else:
-                        clusters[int(splitUp[1])].append(splitUp[0])
-                elif splitUp[0] in refSeq2entrez:
-                    if not int(splitUp[1]) in clusters:
-                        clusters[int(splitUp[1])] = [refSeq2entrez[splitUp[0]]]
-                        clusterNum += 1
-                    else:
-                        clusters[int(splitUp[1])].append(refSeq2entrez[splitUp[0]])
+                    entrez = int(gene)
+                    clusters[group].append(entrez)
+                else:
+                    if gene in refSeq2entrez:
+                        clusters[group].append(refSeq2entrez[gene])
 
         # 5. Make a FASTA file & run weeder
         for cluster in clusters:
-            print cluster
+            print(cluster)
             # Get seqeunces
             clusterSeqs = {}
             for target in clusters[cluster]:
                 if str(target) in seqs:
                     clusterSeqs[target] = seqs[str(target)]
                 else:
-                    print 'Did not find seq for',target
+                    print("Did not find seq for '%s'" % target)
 
             # Make FASTA file
-            print 'Fasta output...'
+            print('Fasta output...')
             fastaFiles.append('tmp/weeder/fasta/'+str(cluster)+'_'+str(dataset)+'.fasta')
             if not os.path.exists('tmp/weeder/fasta'):
                 os.makedirs('tmp/weeder/fasta')
@@ -351,20 +358,20 @@ def run_mirvestigator(seqs, refSeq2entrez, use_entrez):
 
     # Run this using all cores available
     weederPSSMs1 = mgr.list()
-    print 'Starting Weeder runs...'
+    print('Starting Weeder runs...')
     cpus = cpu_count()
     print('There are %d CPUs available.' % cpus)
     pool = Pool(processes=cpus)
     pool.map(runWeeder, range(len(fastaFiles)))
-    print 'Done with Weeder runs.\n'
+    print('Done with Weeder runs.')
 
     # Compare to miRDB using my program
-    from miRvestigator import miRvestigator
+    # TODO: can we read weederPSSMs1 from the weeder result directory ?
+    # this can help in case we have an error in miRvestigator
     m2m = miRvestigator(weederPSSMs1, seqs.values(), seedModel=[6,7,8], minor=True, p5=True,
                         p3=True, wobble=False, wobbleCut=0.25)
     with open('m2m' + '_' + str(dataset) + '.pkl', 'wb') as outFile:
-        cPickle.dump(m2m,outFile)
-    return clusterNum
+        pickle.dump(m2m, outFile)
 
 
 db = None
@@ -395,7 +402,7 @@ def run_target_prediction_dbs(refSeq2entrez, use_entrez):
         miRNATargetDict = mgr.dict(tmpDict)
 
         # Total background
-        print '\n2'
+        print('\n2')
         with open('TargetPredictionDatabases/'+db+'/'+db+'_ids_entrez.bkg','r') as inFile:
             targetList = [int(x) for x in inFile.readlines() if x]
             tmp1 = targetList
@@ -407,7 +414,7 @@ def run_target_prediction_dbs(refSeq2entrez, use_entrez):
             # 3. Read in cluster file and convert to entrez ids
             with open('exp/'+file, 'r') as inFile:
                 dataset = mgr.list([file.strip().split('.')[0]])
-                print dataset[0]
+                print(dataset[0])
                 inFile.readline()
                 lines = inFile.readlines()
                 tmpDict = defaultdict(list)
@@ -440,11 +447,11 @@ def run_target_prediction_dbs(refSeq2entrez, use_entrez):
             if not os.path.exists('miRNA_'+db):
                 os.mkdir('miRNA_'+db)
             # Run this using all cores available
-            print 'Starting '+dataset[0]+' runs...'
+            print('Starting '+ dataset[0] + ' runs...')
             keys2 = clusters.keys()
             pool = Pool(processes=cpus)
             pool.map(clusterHypergeo,keys2)
-            print 'Done.\n'
+            print('Done.')
 
         # 1. Get a list of all files in miRNA directory
         overlapFiles = os.listdir('miRNA_'+db)
@@ -531,7 +538,7 @@ def write_combined_report():
                 cluster_name = cluster_name[1]+'_'+cluster_name[2]+'_'+cluster_name[3]+'_'+cluster_name[0]
                 miRNA_matches[cluster_name] = {'miRNA':line[1],'model':line[2],'mature_seq_ids':miRNA_mature_seq_ids}
 
-    print 'Loaded miRvestigator.'
+    print('Loaded miRvestigator.')
     # Get PITA results
     with open('miRNA/mergedResults_PITA.csv','r') as inFile:
         inFile.readline() # get rid of header
@@ -551,7 +558,7 @@ def write_combined_report():
                 miRNA_matches[line[0]+'_'+line[1]]['pita_perc_targets'] = str(float(line[3])/float(line[6]))
                 miRNA_matches[line[0]+'_'+line[1]]['pita_pValue'] = line[7]
                 miRNA_matches[line[0]+'_'+line[1]]['pita_mature_seq_ids'] = miRNA_mature_seq_ids
-    print 'Loaded PITA.'
+    print('Loaded PITA.')
 
     # Get TargetScan results
     with open('miRNA/mergedResults_TargetScan.csv','r') as inFile:
@@ -572,7 +579,7 @@ def write_combined_report():
                 miRNA_matches[line[0]+'_'+line[1]]['ts_perc_targets'] = str(float(line[3])/float(line[6]))
                 miRNA_matches[line[0]+'_'+line[1]]['ts_pValue'] = line[7]
                 miRNA_matches[line[0]+'_'+line[1]]['ts_mature_seq_ids'] = miRNA_mature_seq_ids
-    print 'Loaded TargetScan.'
+    print('Loaded TargetScan.')
 
     # Big list of all miRNAs for all clusters
     with open('combinedResults.csv','w') as outFile:
