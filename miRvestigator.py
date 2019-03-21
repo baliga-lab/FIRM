@@ -39,7 +39,9 @@ import os, pickle
 #
 class miRvestigator:
     # Initialize and start the run
-    def __init__(self,pssms,seqs3pUTR,seedModel=[6,7,8], minor=True, p5=True, p3=True, textOut=True, wobble=True, wobbleCut=0.25,baseDir='',outName=''):
+    def __init__(self, pssms, seqs3pUTR, seedModel=[6,7,8], minor=True,
+                 p5=True, p3=True, textOut=True,
+                 wobble=True, wobbleCut=0.25, baseDir='', outName=''):
         print('\nmiRvestigator analysis started...')
         self.pssms = pssms
         self.miRNAs = self.setMiRNAs(0,8,minor,p5,p3)
